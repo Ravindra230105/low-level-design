@@ -1,0 +1,341 @@
+Uber (Ride Booking System)
+
+
+Final Requirements
+
+1. Rider can book a ride by providing pickup and destination locations.
+2. Rider can choose a vehicle type such as CAR, BIKE or AUTO.
+3. System finds an available driver matching the requested vehicle type.
+4. Driver can accept a ride request.
+5. Rider can cancel a ride before it starts.
+6. Driver can cancel a ride before it starts.
+7. Driver can start an accepted ride.
+8. Driver can complete a ride.
+9. Fare is calculated using a fare strategy.
+10. Rider can rate the driver after a ride is completed.
+11. Driver location can be updated.
+12. Concurrent ride requests must not assign the same driver to multiple rides.
+
+
+Core Entities
+
+1. RideManager
+2. User
+3. Rider
+4. Driver
+5. Vehicle
+6. Location
+7. Ride
+8. FareStrategy
+9. DriverFindStrategy
+10. Rating
+
+Non Core Entities
+
+11. DistanceStrategy
+12. DistanceCalculator
+13. Observer / Subject
+14. FareDecorator
+15. UserFactory
+16. VehicleType
+17. RideStatus
+
+
+Flow :
+
+Rider
+-> Enter Pickup and Destination
+-> Select Vehicle Type
+-> Request Ride
+-> RideManager finds nearest available Driver
+-> Driver receives notification
+-> Driver accepts Ride
+-> Ride starts
+-> Driver completes Ride
+-> Fare calculated
+-> Rider rates Driver
+
+
+Driver :
+
+Driver
+-> Receives Ride Request
+-> Accept Ride
+-> Start Ride
+-> Complete Ride
+
+Driver can also cancel a ride before it starts.
+
+
+Class RideManager :
+    - list of drivers : vector<Driver*>drivers
+    - rides : unordered_map<string, Ride*>rides
+    - driverFindStrategy : DriverFindStrategy*
+    - mutex : mutex rideMutex
+
+    + getInstance() : RideManager*
+    + setDriverFindStrategy(DriverFindStrategy*) : void
+    + addDriver(Driver*) : void
+    + bookRide(Rider*, Location*, Location*, VehicleType, FareStrategy*) : Ride*
+    + acceptRide(string, Driver*) : bool
+    + startRide(string, Driver*) : bool
+    + completeRide(string, Driver*) : bool
+    + cancelRide(string, Rider*) : bool
+    + cancelRide(string, Driver*) : bool
+    + getRide(string) : Ride*
+
+
+class User :
+    - userId : string
+    - userName : string
+
+    + User(userId, userName)
+    + getUserId()
+    + getUserName()
+
+
+class Rider : public User, public Observer
+    - riderPass : bool
+
+    + Rider(userId, userName, riderPass)
+    + hasRiderPass()
+    + rateDriver(Driver*, value, comment)
+    + update(string)
+
+
+class Driver : public User, public Observer
+    - location : Location*
+    - vehicle : Vehicle*
+    - available : bool
+    - ratings : vector<Rating*>
+
+    + Driver(userId, userName, location, vehicle)
+    + getLocation()
+    + getVehicle()
+    + isAvailable()
+    + setAvailable(bool)
+    + updateLocation(Location*)
+    + addRating(Rating*)
+    + getAverageRating()
+    + update(string)
+
+
+class Vehicle :
+    - vehicleNumber : string
+    - type : VehicleType
+
+    + Vehicle(vehicleNumber, type)
+    + getVehicleNumber()
+    + getType()
+
+
+class Location :
+    - x : int
+    - y : int
+
+    + Location(x, y)
+    + getX()
+    + getY()
+
+
+class DistanceCalculator :
+    - strategy : DistanceStrategy*
+
+    + getInstance() : DistanceCalculator*
+    + setStrategy(DistanceStrategy*)
+    + getDistance(Location*, Location*) : double
+
+
+class DistanceStrategy :
+    + calculateDistance(Location*, Location*) : double
+
+
+class EuclideanDistanceStrategy :
+    + calculateDistance(Location*, Location*) : double
+
+
+class ManhattanDistanceStrategy :
+    + calculateDistance(Location*, Location*) : double
+
+
+class Ride : public Subject
+    - rideId : string
+    - rider : Rider*
+    - driver : Driver*
+    - pickup : Location*
+    - drop : Location*
+    - status : RideStatus
+    - fareStrategy : FareStrategy*
+    - fare : double
+
+    + Builder()
+    + withRider(Rider*)
+    + withDriver(Driver*)
+    + withPickup(Location*)
+    + withDrop(Location*)
+    + withFareStrategy(FareStrategy*)
+    + build()
+    + getRideId()
+    + getRider()
+    + getDriver()
+    + getPickupLocation()
+    + getDropLocation()
+    + getStatus()
+    + getFare()
+    + setDriver(Driver*)
+    + calculateFare()
+    + accept()
+    + start()
+    + complete()
+    + cancel(message)
+
+    - canMoveTo(RideStatus) : bool
+    - moveTo(RideStatus, message) : bool
+
+
+class FareStrategy :
+    + calculateFare(distance) : double
+
+
+class BaseFareStrategy :
+    + calculateFare(distance) : double      // 50 + distance * 10
+
+
+class PremiumFareStrategy :
+    + calculateFare(distance) : double      // 100 + distance * 20
+
+
+class FareDecorator : public FareStrategy
+    # fareStrategy : FareStrategy*
+
+
+class SurgeFare :
+    - multiplier : double
+    + calculateFare(distance) : double      // fare * multiplier
+
+
+class RiderPassDiscount :
+    - percent : double
+    + calculateFare(distance) : double      // fare - percent % of fare
+
+
+class CouponDiscount :
+    - amount : double
+    + calculateFare(distance) : double      // fare - flat amount
+
+
+class DriverFindStrategy :
+    + findDriver(Location*, VehicleType, vector<Driver*>) : Driver*
+
+
+class NearestDriverStrategy :
+    + findDriver(Location*, VehicleType, vector<Driver*>) : Driver*
+
+
+class Rating :
+    - value : int
+    - comment : string
+
+    + Rating(value, comment)
+    + getValue()
+    + getComment()
+
+
+class Observer :
+    + update(string) : void
+
+
+class Subject :
+    - observers : vector<Observer*>
+
+    + attach(Observer*)
+    + detach(Observer*)
+    + notifyAll(string)
+
+
+Ride is the Subject. Rider and Driver are the Observers and are attached
+to the Ride when it is built, so every state change of the Ride is pushed
+to both of them.
+
+
+class UserFactory :
+    + createRider(userId, name, riderPass) : Rider*
+    + createDriver(userId, name, location, vehicle) : Driver*
+
+
+Design Patterns Used
+
+1. Strategy Pattern
+   - DistanceStrategy
+   - DriverFindStrategy
+   - FareStrategy
+
+2. Observer Pattern
+   - Ride extends Subject.
+   - Rider and Driver implement Observer.
+   - Ride notifies both of them on request, accept, start, complete and cancel.
+
+3. Singleton Pattern
+   - RideManager is a single shared manager for ride assignment.
+
+4. Builder Pattern
+   - Ride::Builder creates Ride objects.
+
+5. Decorator Pattern
+   - SurgeFare, RiderPassDiscount and CouponDiscount wrap any FareStrategy,
+     so pricing rules can be stacked without touching the base strategies.
+
+6. Factory Pattern
+   - UserFactory creates Rider and Driver objects.
+
+State handling
+   - The ride states have no behaviour of their own, only allowed transitions,
+     so a class per state is not needed.
+   - Ride keeps a RideStatus and a small transition table in canMoveTo().
+     REQUESTED  -> ACCEPTED, CANCELLED
+     ACCEPTED   -> IN_PROGRESS, CANCELLED
+     IN_PROGRESS-> COMPLETED
+     COMPLETED / CANCELLED are terminal.
+
+
+Concurrency
+
+1. Multiple riders can request rides at the same time.
+2. RideManager protects driver assignment using a mutex.
+3. Driver availability is checked and changed while holding the same mutex.
+4. Therefore two concurrent requests cannot reserve the same available driver.
+5. Ride state changes are also protected by RideManager's mutex.
+
+
+Important Design Decision
+
+The domain relationship is:
+
+Rider -> Ride -> Driver
+             |
+             -> Vehicle
+             -> Pickup
+             -> Drop
+
+RideManager owns the ride-booking workflow.
+
+Driver matching is kept separate using DriverFindStrategy so another strategy can be added later, such as:
+- nearest driver
+- highest rated driver
+- lowest ETA driver
+
+Distance calculation is kept separate using DistanceStrategy so the application can switch from simple Euclidean distance to Manhattan distance or a real map/routing implementation.
+
+Fare calculation is also kept separate using FareStrategy so different pricing models can be added without changing Ride. FareStrategy only receives the distance, not the whole Ride, so pricing has no dependency on the ride object. Surge and discounts are applied with the Decorator pattern on top of a base strategy, for example :
+
+    FareStrategy* fare =
+        new CouponDiscount(
+            new SurgeFare(new BaseFareStrategy(), 1.5),
+            30
+        );
+
+RideManager wraps the strategy with RiderPassDiscount automatically when the rider has a rider pass.
+
+All ride actions go through RideManager, which owns the mutex, so no entity calls back into the manager and every state change stays inside one lock.
+
+The implementation below keeps the same major ideas as the referenced article while making the C++ version complete, thread-safe for driver assignment, and runnable.

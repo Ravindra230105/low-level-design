@@ -1,0 +1,57 @@
+Zepto
+
+
+1. Functional Requirements
+
+  User 
+    1. User can Search Item.
+    2. User can add or remove Item to Cart.
+    3. User can place a Order.
+    4. User can make Payment for Order.
+
+  Admin
+    1. Add Node
+    2. Add Inventories to Node
+    3. handling Discount order
+
+  DeliveryPartner
+    1. Delivery partner can pick the order from node.
+    2. Delive partner can dropped the order at user address.
+
+  Out of scope
+    1. order rating
+    2. order tracking
+    3. Notification
+    4. Delivery partner selection
+    5. Delivery partner flow
+
+
+
+2. Non-Functional Requirements
+
+   1. Handle Concurrency while updating the Node Inventory.
+   2. Duplicate Payment Handling. 
+   3. Extensibility: system should easily support new payment methods and discount types.
+
+
+
+3. Core Entities 
+   1. User 
+   2. Admin
+   3. Search
+   4. Item 
+   5. Cart
+   6. Order 
+   7. Payment
+   8. Node 
+   9. Inventory 
+   10. NodeInventory
+   10. Payment
+   11. Discount 
+   12. ZeptoService
+
+
+
+
+
+

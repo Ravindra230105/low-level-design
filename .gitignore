@@ -1,0 +1,9 @@
+# build outputs
+*.out
+*.o
+*.dSYM/
+a.out
+
+# scratch
+interview.cpp
+.DS_Store

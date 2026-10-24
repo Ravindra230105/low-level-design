@@ -1,0 +1,68 @@
+Elevator
+
+Requirements:
+
+1. System manages 3 elevators and 10 floors.
+2. user can request elevator from any floor (up and down). system decides which elevator to dispatch
+3. once inside, user can select one or more destination floors. 
+4. Elevator stops come in 2 types
+   4.1 : Request calls: request from a floor with direction up and down
+   4.2 : Destination calls: request from inside elevator (floor number)
+5. system handles multiple concurrent pickup requests across floors.
+6. Invalid requests should be rejected.
+
+
+Out of scops:
+
+1. weight capacity and passenger limits.
+2. Emergency stop functionality.
+
+
+
+
+Core Entities and Relationships
+
+1. Floor      (there is no need of Floor class, it is just a number and doing nothing)
+2. Request
+3. Elevator
+4. ElevatorController
+5. User
+
+
+
+Class ElevatorController :
+    - list of elevators : vector<Elevator*>elevators
+
+    + ElevatorController()
+    + requestElevator(floor, type) : Boolean
+    + step() : void
+
+
+Class Elevator :
+    - currentFloor : int
+    - direction : Direction (up, down, idle)
+    - requests (set)
+
+    + Elevator()
+    + addRequest(request) : boolean
+    + step() : void
+    + getCurrentFloor() : int
+    + getDirection() : Direction
+
+
+Class Request : 
+    - floor: int
+    - type: RequestType
+
+    + Request(floor, type)
+    + getFloor() : int
+    + getType() : RequestType
+
+
+enum Class RequestType : 
+    PICKUP_UP, PICKUP_DOWN, DESTINATION
+
+enum Class Direction :
+    UP, DOWN, IDLE
+
+   

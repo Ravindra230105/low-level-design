@@ -11,26 +11,26 @@ class PaymentStrategy {
     virtual ~PaymentStrategy() {}
 };
 
-class CardPayment : public PaymentStrategy {
+class RazorPay : public PaymentStrategy {
     public:
     void pay(int amount) override {
         cout << "paid " << amount << " using Credit Card" << endl;
     }
 };
 
-class UpiPayment : public PaymentStrategy {
+class PhonePe : public PaymentStrategy {
     public:
     void pay(int amount) override {
         cout << "paid " << amount << " using UPI" << endl;
     }
 };
 
-class Order {
+class PaymentProcessor {
     private:
     PaymentStrategy* paymentStrategy;
 
     public:
-    Order(PaymentStrategy* strategy) {
+    PaymentProcessor(PaymentStrategy* strategy) {
         paymentStrategy = strategy;
     }
 
@@ -44,12 +44,12 @@ class Order {
 };
 
 int main() {
-    CardPayment card;
-    UpiPayment upi;
+    RazorPay card;
+    PhonePe upi;
 
-    Order order(&card);
-    order.checkout(500);
+    PaymentProcessor paymentProcessor(&card);
+    paymentProcessor.checkout(500);
 
-    order.setPaymentStrategy(&upi);
-    order.checkout(300);
+    paymentProcessor.setPaymentStrategy(&upi);
+    paymentProcessor.checkout(300);
 }

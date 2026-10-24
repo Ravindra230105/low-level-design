@@ -1,0 +1,107 @@
+BooyMyShow (Ticket Booking system)
+
+
+Final Requirements
+
+1. Users can search movie by title
+2. Users can browse movies playing at a given theatre
+3. Theaters have multiple screens. all screens share same seat layout. (rows A-Z , col 0-20)
+4. Users can view available seats for showtime and select specific ones.
+5. Users can book multiple seats in a single reservation.
+6. concurrent booking of the same seat 
+7. Users can cancel a reservation by confirmation Id and release the seats. 
+8. Payment Processing
+
+
+Core Entities
+
+1. BookMyShowController
+2. User
+3. Movie
+4. Theater
+5. Screen 
+6. Show 
+7. Seat 
+8. Payment (using strategy pattern: UPI, CASH, CREDIT_CARD)
+9. Booking
+10. Search
+
+Non Core Entities
+10. Address
+11. TheaterStatus (enum class : Active, Closed, InActive)
+
+
+Flow : 
+
+User -> Search Movie -> list of movies -> book tickets -> list of theaters -> list of screens 
+-> Seat availablist list -> Seat selection -> Book Seat -> Payment -> Seat Booked.
+
+Admin -> Add theater , Add User
+
+
+class BookMyShowController : 
+    - list of theaters : vector<Theater*>theaters
+    - list of users : vector<User*>users
+    
+    + BookMyShowController()
+    + addTheater(Theater) : void
+    + addUser(User) : void
+
+class User : 
+    - name : string
+    - email : string
+    - address : Address
+
+    + User(name, email)
+    + getName()
+    + getEmail()
+    + setAddress(address)
+
+class Theater : 
+    - name : string
+    - address : Address*
+    - status : TheaterStatus*
+    - list of screens : vector<Screen*>screens
+
+    + Theater(name, address)
+    + addScreen(Screen) : void
+    + removeScreen(Screen) : void
+    + getStatus() : Status
+
+class Screen : 
+    - name : string
+    - list of seats : vector<Seat*>seats
+    
+    + Screen(name)
+    + addSeat(seat)
+    + updateSeatDetails(seat)
+
+class Seat : 
+    - row : string
+    - col : int 
+
+    + Seat(row, col)
+    + isSeatAvailable()
+    + lockSeat()
+    + BookSeat()
+    + unlockSeat()
+    + cancelSeat()
+
+class Movie : 
+    - name : string
+    - duration : int (minutes)
+    - description : string
+
+    + Movie(name, duration, description)
+
+class Show : 
+    - screen : Screen
+    - movie : Movie
+    - list of booked seats : vector<Seat*>BookedSeats 
+    - startTime : dateTime
+    
+    + Show(screen, movie, startTime)
+
+
+
+
