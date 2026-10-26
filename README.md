@@ -22,6 +22,8 @@ My LLD / machine-coding practice for interview prep. Each system has runnable C+
 
 | Pattern | Type | Example |
 |---|---|---|
+| Singleton | Creational | [singleton_pattern.cpp](./DesignPattern/singleton_pattern.cpp) |
+| Factory | Creational | [factory_pattern.cpp](./DesignPattern/factory_pattern.cpp) |
 | Strategy | Behavioral | [strategy_pattern.cpp](./DesignPattern/strategy_pattern.cpp) |
 | Observer | Behavioral | [observer_pattern.cpp](./DesignPattern/observer_pattern.cpp) |
 | Builder | Creational | [builder_design_pattern.cpp](./DesignPattern/builder_design_pattern.cpp) |
