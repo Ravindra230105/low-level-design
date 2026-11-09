@@ -1,0 +1,261 @@
+——————————– SplitWise —————————————————
+
+Requirements:
+
+Functional Requirements
+
+1.  Users can create an account with name and email.
+2.  Users can create a group.
+3.  Users can add members to or remove members from a group.
+4.  Users can add an expense to a group by specifying: 4.1. Expense
+    creator 4.2. User who paid the expense 4.3. Description and total
+    amount 4.4. Participants and their split details
+5.  Expenses can be split using the following strategies: 5.1. Equally
+    among participants 5.2. Exact amount for each participant 5.3.
+    Percentage-wise 5.4. Share-wise (for example, 2:1:1)
+6.  Users can edit an existing active expense.
+7.  Users can delete an existing active expense.
+8.  The system maintains a ledger of expense, reversal, and settlement
+    entries.
+9.  Users can view their net balance in a group: 9.1. Positive balance
+    means the user should receive money. 9.2. Negative balance means the
+    user owes money.
+10. Users can view simplified “who owes whom” balances.
+11. Users can manually settle an outstanding amount with another group
+    member.
+12. Settlement must not exceed the amount owed by the payer or the
+    amount receivable by the receiver.
+13. A removed member’s existing financial obligations remain available
+    for settlement.
+14. The same users can participate in multiple groups, and each group’s
+    balances are maintained independently.
+
+Non-Functional Requirements
+
+1.  Financial consistency: split amounts must add up exactly to the
+    expense total.
+2.  Validation: invalid users, groups, participants, split values, and
+    settlement requests must be rejected.
+3.  Monetary precision: amounts are represented as integer paise rather
+    than floating-point values.
+4.  Auditability: expense edits and deletions are reflected through
+    reversal ledger entries instead of deleting historical ledger
+    records.
+5.  Deterministic balance simplification: simplified debts are generated
+    in a deterministic order.
+6.  Concurrency: the design should protect concurrent expense and
+    settlement operations from inconsistent balance updates. (The
+    current in-memory implementation does not implement
+    synchronization.)
+
+Out of Scope / Not Implemented in the Current Code
+
+1.  Actual online payment processing or integration with a payment
+    gateway.
+2.  Notifications to group members when an expense is added, edited, or
+    deleted.
+3.  Persistent database storage.
+4.  Authentication and authorization.
+5.  Explicit concurrency control such as mutexes or database
+    transactions.
+6.  Automatic reminders for pending settlements.
+
+Core Entities and Relationships
+
+1.  User
+    -   Represents a registered user.
+    -   A user can belong to multiple groups.
+2.  Group
+    -   Represents an expense-sharing group.
+    -   A group contains multiple GroupMember records.
+3.  GroupMember
+    -   Represents a user’s membership and status in a group.
+    -   Membership status can be ACTIVE or REMOVED.
+    -   Removing a member does not erase their existing financial
+        obligations.
+4.  SplitInput
+    -   Contains the input required to calculate a participant’s share.
+    -   Depending on the split strategy, it carries exact amount,
+        percentage, or shares.
+5.  ExpenseSplit
+    -   Stores the final calculated amount assigned to a participant.
+6.  SplitStrategy
+    -   Abstract strategy used to calculate expense shares.
+    -   Implementations: 6.1. EqualSplitStrategy 6.2. ExactSplitStrategy
+        6.3. PercentageSplitStrategy 6.4. SharesSplitStrategy
+7.  Expense
+    -   Represents an expense created in a group.
+    -   Stores creator, payer, amount, description, split type, and
+        calculated splits.
+    -   Expense status can be ACTIVE or DELETED.
+8.  LedgerEntry
+    -   Represents a financial change for a user in a group.
+    -   Ledger entry types: 8.1. EXPENSE 8.2. REVERSAL 8.3. SETTLEMENT
+9.  Settlement
+    -   Represents a manual settlement between two users in a group.
+10. SplitwiseManager
+    -   Main class that coordinates users, groups, expenses, split
+        strategies, ledger operations, balance calculations, and
+        settlements.
+
+Relationships
+
+1.  A User can belong to many Groups.
+2.  A Group contains multiple GroupMember records.
+3.  A GroupMember refers to one User through userId.
+4.  A Group can contain many Expenses.
+5.  An Expense has one creator and one payer.
+6.  An Expense contains multiple ExpenseSplit records.
+7.  SplitwiseManager owns and coordinates the users, groups, expenses,
+    ledger entries, settlements, and split strategies.
+8.  An Expense can produce multiple LedgerEntry records.
+9.  Editing or deleting an Expense adds reversal entries to the ledger.
+10. A Settlement produces ledger entries for both the payer and
+    receiver.
+
+Enums
+
+1.  SplitType:
+    -   EQUAL
+    -   EXACT
+    -   PERCENTAGE
+    -   SHARES
+2.  MemberStatus:
+    -   ACTIVE
+    -   REMOVED
+3.  ExpenseStatus:
+    -   ACTIVE
+    -   DELETED
+4.  LedgerType:
+    -   EXPENSE
+    -   REVERSAL
+    -   SETTLEMENT
+
+Class SplitwiseManager:
+
+Private Members: - nextUserId : int - nextGroupId : int - nextExpenseId
+: int - nextSettlementId : int - users : unordered_map<int, User> -
+groups : unordered_map<int, Group> - expenses : unordered_map<int,
+Expense> - ledger : vector - settlements : vector - strategies :
+unordered_map<SplitType, unique_ptr>
+
+Public Methods: + SplitwiseManager() + createUser(name, email) : int +
+userExists(userId) : bool + createGroup(name) : int + addMember(groupId,
+userId) : void + removeMember(groupId, userId) : void +
+isActiveMember(groupId, userId) : bool + addExpense(groupId, createdBy,
+paidBy, description, totalAmount, splitType, inputs) : int +
+editExpense(expenseId, description, totalAmount, splitType, inputs) :
+void + deleteExpense(expenseId) : void + getNetBalances(groupId) :
+unordered_map<int, Money> + getSimplifiedBalances(groupId) : vector +
+settle(groupId, fromUserId, toUserId, amount) : void +
+showBalances(groupId) : void + showSimplifiedBalances(groupId) : void
+
+Private Methods: - calculateSplits(groupId, totalAmount, splitType,
+inputs) : vector - validateExpenseUsers(groupId, createdBy, paidBy) :
+void - postExpenseLedger(expense) : void -
+reverseExpenseLedger(expenseId) : void
+
+Class User: - userId : int - name : string - email : string
+
+    + User(userId, name, email)
+    + getId() : int
+    + getName() : string
+
+Class Group: - groupId : int - name : string - members :
+unordered_map<int, GroupMember>
+
+    + Group(groupId, name)
+    + getId() : int
+    + getName() : string
+    + addMember(userId) : void
+    + removeMember(userId) : void
+    + isActiveMember(userId) : bool
+    + hasMember(userId) : bool
+
+Class GroupMember: - userId : int - status : MemberStatus
+
+    + GroupMember(userId)
+    + getUserId() : int
+    + getStatus() : MemberStatus
+    + remove() : void
+    + activate() : void
+
+Struct SplitInput: - userId : int - exactAmount : Money - percentage :
+int - shares : int
+
+Struct ExpenseSplit: - userId : int - amount : Money
+
+Abstract Class SplitStrategy: + calculate(totalAmount, inputs) : vector
+# validateParticipants(inputs) : void
+
+Class EqualSplitStrategy : public SplitStrategy: +
+calculate(totalAmount, inputs) : vector
+
+Class ExactSplitStrategy : public SplitStrategy: +
+calculate(totalAmount, inputs) : vector
+
+Class PercentageSplitStrategy : public SplitStrategy: +
+calculate(totalAmount, inputs) : vector
+
+Class SharesSplitStrategy : public SplitStrategy: +
+calculate(totalAmount, inputs) : vector
+
+Class Expense: - expenseId : int - groupId : int - createdBy : int -
+paidBy : int - description : string - totalAmount : Money - splitType :
+SplitType - splits : vector - status : ExpenseStatus
+
+    + Expense(expenseId, groupId, createdBy, paidBy, description,
+              totalAmount, splitType, splits)
+    + getId() : int
+    + getGroupId() : int
+    + getCreatedBy() : int
+    + getPaidBy() : int
+    + getTotalAmount() : Money
+    + getSplitType() : SplitType
+    + getSplits() : const vector<ExpenseSplit>&
+    + getStatus() : ExpenseStatus
+    + update(description, totalAmount, splitType, splits) : void
+    + markDeleted() : void
+
+Class LedgerEntry: - groupId : int - userId : int - sourceId : int -
+amount : Money - type : LedgerType
+
+    + LedgerEntry(groupId, userId, sourceId, amount, type)
+    + getGroupId() : int
+    + getUserId() : int
+    + getSourceId() : int
+    + getAmount() : Money
+    + getType() : LedgerType
+
+Class Settlement: - settlementId : int - groupId : int - fromUserId :
+int - toUserId : int - amount : Money
+
+    + Settlement(settlementId, groupId, fromUserId, toUserId, amount)
+    + getId() : int
+    + getGroupId() : int
+    + getFromUserId() : int
+    + getToUserId() : int
+    + getAmount() : Money
+
+Struct Debt: - fromUserId : int - toUserId : int - amount : Money
+
+Important Notes About the Current Implementation
+
+1.  Money is stored as long long in paise.
+2.  Percentage values use basis points: 5000 represents 50%, and the
+    total percentage must be 10000.
+3.  The equal, percentage, and shares strategies assign any rounding
+    remainder to the last participant so the split total remains exact.
+4.  The ledger stores the payer’s credit and each participant’s debit.
+5.  Positive net balance means the user should receive money; negative
+    means the user owes money.
+6.  Simplified balances are calculated by matching debtors with
+    creditors.
+7.  Settlement updates both users’ balances through ledger entries.
+8.  The code includes no Notification class, Payment class, or
+    notification delivery/payment gateway flow. A settlement is a
+    recorded manual settlement, not an actual online payment
+    transaction.
+9.  Although concurrency is a requirement in the proposed system, the
+    current code is an in-memory implementation without locks or
+    transactional synchronization.
